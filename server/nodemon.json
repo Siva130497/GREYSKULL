@@ -1,0 +1,6 @@
+{
+  "watch": ["src"],
+  "ext": "js,json",
+  "ignore": ["src/seeders/*.log"],
+  "exec": "node src/index.js"
+}
