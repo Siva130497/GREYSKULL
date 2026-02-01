@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
-import Layout from "./app/Layout";
+import Layout from "./app/layout";
 import Login from "./pages/Login";
 import StationDiary from "./pages/StationDiary";
 import CostaGuide from "./pages/CostaGuide";
