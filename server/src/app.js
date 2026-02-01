@@ -20,6 +20,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:3000",
+      "https://greyskull-web.onrender.com",
       process.env.CLIENT_URL, // Render frontend URL
     ].filter(Boolean),
     credentials: true,
