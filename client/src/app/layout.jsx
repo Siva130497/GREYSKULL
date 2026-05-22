@@ -7,10 +7,12 @@ export default function Layout() {
   if (!session?.token || !session?.user) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-shellbg">
+    // h-[100dvh] (not min-h) so <main> stays bounded to the viewport and its
+    // overflow-y-auto actually scrolls instead of growing the page.
+    <div className="h-[100dvh] flex flex-col bg-shellbg">
       <main
         className="
-          flex-1 overflow-y-auto
+          flex-1 min-h-0 overflow-y-auto
           pb-[calc(80px+env(safe-area-inset-bottom))]
           md:pb-[calc(96px+env(safe-area-inset-bottom))]
         "

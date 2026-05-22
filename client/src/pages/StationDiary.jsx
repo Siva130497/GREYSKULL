@@ -99,8 +99,11 @@ export default function StationDiary() {
   }
 
   return (
-    <div className="relative bg-shellbg">
-      <div className="sticky top-0 z-40 bg-white">
+    // Full-height column so we can own the scrolling: header is shrink-0,
+    // timeline is flex-1 + overflow-y-auto. The outer <main> already provides
+    // bottom padding for the nav, so we don't add it again here.
+    <div className="h-full flex flex-col bg-shellbg">
+      <div className="shrink-0 z-40 bg-white">
         <StationTopBar
           shellName={shell ? `Shell ${shell.name} Station` : "Pick a shell"}
           monthLabel={monthLabel}
@@ -117,18 +120,20 @@ export default function StationDiary() {
         </div>
       </div>
 
-      {shell?._id ? (
-        <StationTimeline
-          entries={entries}
-          selectedDate={date}
-          startHour={0}
-          endHour={23}
-        />
-      ) : (
-        <div className="bg-white p-6 text-center text-sm text-gray-500">
-          Pick a shell from the top to view the diary.
-        </div>
-      )}
+      <div className="flex-1 min-h-0 overflow-y-auto bg-white">
+        {shell?._id ? (
+          <StationTimeline
+            entries={entries}
+            selectedDate={date}
+            startHour={0}
+            endHour={23}
+          />
+        ) : (
+          <div className="p-6 text-center text-sm text-gray-500">
+            Pick a shell from the top to view the diary.
+          </div>
+        )}
+      </div>
 
       <div
         className="
