@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 
 const { corsOptions } = require("./config/cors");
+const { ensureDb } = require("./config/db");
 const { requestLogger } = require("./middlewares/requestLogger.middleware");
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -49,7 +50,19 @@ app.use(
 app.use(express.json({ limit: "12mb" })); // planogram photo uploads (client resizes to ~200-400KB but leave headroom)
 app.use(requestLogger);
 
+// Cheap health-check that doesn't touch the DB — useful for uptime monitors.
 app.get("/health", (req, res) => res.json({ ok: true, service: "station-diary-api" }));
+
+// Ensure Mongo is connected before any /api/* request. The connection is
+// cached on globalThis so this is a no-op after the first call.
+app.use("/api", async (req, res, next) => {
+  try {
+    await ensureDb();
+    next();
+  } catch (e) {
+    next(e);
+  }
+});
 
 
 app.use("/api/shells", shellRoutes);
