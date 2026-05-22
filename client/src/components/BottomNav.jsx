@@ -1,63 +1,129 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { NotebookPen, Coffee, Package, MoreHorizontal } from "lucide-react";
+import {
+  NotebookPen,
+  Coffee,
+  Wrench,
+  Package,
+  DoorOpen,
+  LayoutGrid,
+  Salad,
+  MoreHorizontal,
+  ShieldCheck,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "../lib/api";
-import { getSession } from "../lib/storage";
+import { getShell, getUser } from "../lib/storage";
 import { STOCK_UPDATED_EVENT } from "../lib/events";
 
-const tabs = [
-  {
-    label: "Station Diary",
-    to: "/app/diary",
-    Icon: NotebookPen,
-    activeBg: "bg-yellow-400",
-    activeText: "text-gray-900",
-    inactiveBg: "bg-gray-100",
-    inactiveText: "text-gray-600",
-  },
-  {
-    label: "Costa Guide",
-    to: "/app/costa",
-    Icon: Coffee,
-    activeBg: "bg-red-600",
-    activeText: "text-white",
-    inactiveBg: "bg-gray-100",
-    inactiveText: "text-gray-600",
-  },
-  {
-    label: "Stock List",
-    to: "/app/stock",
-    Icon: Package,
-    activeBg: "bg-blue-600",
-    activeText: "text-white",
-    inactiveBg: "bg-gray-100",
-    inactiveText: "text-gray-600",
-    disabled: true, // you said later
-  },
-  {
-    label: "More",
-    to: "/app/more",
-    Icon: MoreHorizontal,
-    activeBg: "bg-emerald-600",
-    activeText: "text-white",
-    inactiveBg: "bg-gray-100",
-    inactiveText: "text-gray-600",
-    disabled: true, // you said later
-  },
-];
+function buildTabs(isAdmin) {
+  const base = [
+    {
+      key: "diary",
+      label: "Diary",
+      fullLabel: "Station Diary",
+      to: "/app/diary",
+      Icon: NotebookPen,
+      activeBg: "bg-yellow-400",
+      activeText: "text-gray-900",
+    },
+    {
+      key: "costa",
+      label: "Costa",
+      fullLabel: "Costa Guide",
+      to: "/app/costa",
+      Icon: Coffee,
+      activeBg: "bg-red-600",
+      activeText: "text-white",
+    },
+    {
+      key: "faults",
+      label: "Faults",
+      fullLabel: "Costa Faults",
+      to: "/app/faults",
+      Icon: Wrench,
+      activeBg: "bg-[#6f1d3a]",
+      activeText: "text-white",
+    },
+    {
+      key: "stock",
+      label: "Stock",
+      fullLabel: "Stock List",
+      to: "/app/stock",
+      Icon: Package,
+      activeBg: "bg-blue-600",
+      activeText: "text-white",
+    },
+    {
+      key: "trading",
+      label: "Trade",
+      fullLabel: "Open & Trade",
+      to: "/app/trading",
+      Icon: DoorOpen,
+      activeBg: "bg-emerald-600",
+      activeText: "text-white",
+    },
+    {
+      key: "planogram",
+      label: "Plan",
+      fullLabel: "Planogram",
+      to: "/app/planogram",
+      Icon: LayoutGrid,
+      activeBg: "bg-violet-600",
+      activeText: "text-white",
+    },
+    {
+      key: "food",
+      label: "Food",
+      fullLabel: "Food Safety",
+      to: "/app/food",
+      Icon: Salad,
+      activeBg: "bg-lime-600",
+      activeText: "text-white",
+      disabled: true,
+    },
+  ];
+
+  if (isAdmin) {
+    base.push({
+      key: "admin",
+      label: "Admin",
+      fullLabel: "Admin",
+      to: "/app/admin",
+      Icon: ShieldCheck,
+      activeBg: "bg-amber-500",
+      activeText: "text-white",
+    });
+  } else {
+    base.push({
+      key: "more",
+      label: "More",
+      fullLabel: "More",
+      to: "/app/more",
+      Icon: MoreHorizontal,
+      activeBg: "bg-emerald-600",
+      activeText: "text-white",
+      disabled: true,
+    });
+  }
+
+  return base;
+}
 
 function TabButton({ tab, outCount }) {
-  // ✅ Keep your existing "disabled" behavior, but allow Stock tab when route is used
-  const allowStock = tab.label === "Stock List"; // stock is now live
-  const isDisabled = tab.disabled && !allowStock;
-
-  if (isDisabled) {
+  if (tab.disabled) {
     return (
-      <div className="h-12 md:h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center gap-2 border border-gray-100">
-        <tab.Icon className="w-5 h-5" />
-        <span className="text-sm md:text-base font-semibold">{tab.label}</span>
+      <div className="h-14 sm:h-14 md:h-16 rounded-2xl bg-gray-50 text-gray-400 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 border border-gray-100 px-1">
+        <tab.Icon className="w-5 h-5 shrink-0" />
+        <span className="font-semibold leading-tight">
+          <span className="lg:hidden text-[10px] sm:text-xs md:text-sm">
+            {tab.label}
+          </span>
+          <span className="hidden lg:inline text-xs xl:text-sm">
+            {tab.fullLabel}
+          </span>
+        </span>
       </div>
     );
   }
@@ -67,19 +133,18 @@ function TabButton({ tab, outCount }) {
       to={tab.to}
       className={({ isActive }) =>
         [
-          "relative h-12 md:h-14 rounded-2xl",
-          "flex items-center justify-center gap-2",
-          "transition overflow-hidden",
+          "relative h-14 sm:h-14 md:h-16 rounded-2xl",
+          "flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5",
+          "transition overflow-hidden px-1 sm:px-1.5 md:px-2",
           isActive
             ? `${tab.activeBg} ${tab.activeText} shadow-sm`
-            : `${tab.inactiveBg} ${tab.inactiveText} hover:bg-gray-200`,
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200",
         ].join(" ")
       }
       end
     >
       {({ isActive }) => (
         <>
-          {/* Active shine / movement */}
           {isActive && (
             <motion.div
               layoutId="navShine"
@@ -90,16 +155,20 @@ function TabButton({ tab, outCount }) {
             />
           )}
 
-          {/* ✅ Stock badge */}
-          {tab.label === "Stock List" && outCount > 0 && (
-            <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-red-600 text-white text-[11px] font-extrabold flex items-center justify-center z-20">
+          {tab.key === "stock" && outCount > 0 && (
+            <span className="absolute top-1 right-1 sm:-top-2 sm:-right-2 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 px-1 rounded-full bg-red-600 text-white text-[10px] sm:text-[11px] font-extrabold flex items-center justify-center z-20 ring-2 ring-white">
               {outCount}
             </span>
           )}
 
-          <tab.Icon className="w-5 h-5 relative z-10" />
-          <span className="text-sm md:text-base font-semibold relative z-10">
-            {tab.label}
+          <tab.Icon className="w-5 h-5 relative z-10 shrink-0" />
+          <span className="font-semibold leading-tight relative z-10">
+            <span className="lg:hidden text-[10px] sm:text-xs md:text-sm">
+              {tab.label}
+            </span>
+            <span className="hidden lg:inline text-xs xl:text-sm">
+              {tab.fullLabel}
+            </span>
           </span>
         </>
       )}
@@ -107,18 +176,25 @@ function TabButton({ tab, outCount }) {
   );
 }
 
-export default function TabBar() {
+export default function BottomNav() {
   const location = useLocation();
-  const { shell } = getSession() || {};
+  const shell = getShell();
+  const user = getUser();
+  const isAdmin = user?.role === "super_admin";
+
   const [outCount, setOutCount] = useState(0);
+  const tabs = buildTabs(isAdmin);
 
   async function refreshCount() {
     try {
-      if (!shell?._id) return;
+      if (!shell?._id) {
+        setOutCount(0);
+        return;
+      }
       const res = await api.get(`/stock?shellId=${shell._id}`);
       setOutCount(res.data?.data?.outCount || 0);
     } catch {
-      // keep calm, no UI crash
+      // ignore
     }
   }
 
@@ -126,12 +202,10 @@ export default function TabBar() {
     refreshCount();
   }, [shell?._id]);
 
-  // refresh when route changes (keeps badge accurate)
   useEffect(() => {
     refreshCount();
   }, [location.pathname]);
 
-  // refresh when stock changes anywhere
   useEffect(() => {
     const handler = () => refreshCount();
     window.addEventListener(STOCK_UPDATED_EVENT, handler);
@@ -139,16 +213,13 @@ export default function TabBar() {
   }, []);
 
   return (
-    <div className="sticky bottom-0 z-50 bg-white border-t">
-      <div className="px-3 py-2">
-        <div className="grid grid-cols-4 gap-2">
+    <div className="bg-white border-t shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+      <div className="px-1 sm:px-2 lg:px-3 py-2 max-w-7xl mx-auto">
+        <div className="grid grid-cols-8 gap-0.5 sm:gap-1 lg:gap-1.5">
           {tabs.map((t) => (
-            <TabButton key={t.label} tab={t} outCount={outCount} />
+            <TabButton key={t.key} tab={t} outCount={outCount} />
           ))}
         </div>
-
-        {/* iPad safe area spacing */}
-        <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
     </div>
   );

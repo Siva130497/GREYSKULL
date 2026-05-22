@@ -1,28 +1,62 @@
+const bcrypt = require("bcryptjs");
 const Staff = require("../models/Staff.model");
 const Shell = require("../models/Shell.model");
+const { signToken } = require("../utils/jwt.util");
 const { ok } = require("../utils/response.util");
 
-/**
- * "Login" = validate staff belongs to shell.
- * No password. We return staff + shell info so frontend can store it.
- */
+function publicUser(user, shell) {
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    shell: shell ? { _id: shell._id, name: shell.name } : null,
+  };
+}
+
 async function login(req, res, next) {
   try {
-    const { shellId, staffId } = req.body;
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "EMAIL_AND_PASSWORD_REQUIRED" });
+    }
 
-    const shell = await Shell.findById(shellId).lean();
-    if (!shell) return res.status(404).json({ ok: false, message: "SHELL_NOT_FOUND" });
+    const user = await Staff.findOne({
+      email: String(email).toLowerCase().trim(),
+    });
+    if (!user || user.isActive === false) {
+      return res.status(401).json({ ok: false, message: "INVALID_CREDENTIALS" });
+    }
 
-    const staff = await Staff.findOne({ _id: staffId, shellId }).lean();
-    if (!staff) return res.status(404).json({ ok: false, message: "STAFF_NOT_FOUND_FOR_SHELL" });
+    const matches = await bcrypt.compare(password, user.passwordHash);
+    if (!matches) {
+      return res.status(401).json({ ok: false, message: "INVALID_CREDENTIALS" });
+    }
 
-    return ok(res, {
-      shell: { _id: shell._id, name: shell.name },
-      staff: { _id: staff._id, name: staff.name }
-    }, "LOGIN_OK");
+    let shell = null;
+    if (user.shellId) {
+      shell = await Shell.findById(user.shellId).lean();
+    }
+
+    const token = signToken(user);
+    return ok(res, { token, user: publicUser(user, shell) }, "LOGIN_OK");
   } catch (e) {
     next(e);
   }
 }
 
-module.exports = { login };
+async function me(req, res, next) {
+  try {
+    let shell = null;
+    if (req.user.shellId) {
+      shell = await Shell.findById(req.user.shellId).lean();
+    }
+    return ok(res, { user: publicUser(req.user, shell) });
+  } catch (e) {
+    next(e);
+  }
+}
+
+module.exports = { login, me };

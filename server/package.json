@@ -9,18 +9,22 @@
     "start": "node src/index.js",
     "seed": "node src/seeders/index.js",
     "seed:issue-types": "node src/seeders/seedIssueTypes.js",
-    "seed:stock": "node src/seeders/seedEssentialStockInline.js"
-    
+    "seed:stock": "node src/seeders/seedEssentialStockInline.js",
+    "seed:auth": "node src/seeders/seedAuth.js",
+    "seed:trading": "node src/seeders/seedTradingHours.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.5",
+    "serverless-http": "^4.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

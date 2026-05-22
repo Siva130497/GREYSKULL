@@ -1,20 +1,30 @@
 import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
-import "../styles/globals.css";
+import { Calendar as CalendarIcon, Bell } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import ProfileMenu from "./ProfileMenu";
+import ShellSwitcher from "./ShellSwitcher";
 
 function IconBtn({ children, onClick, title }) {
   return (
     <button
       title={title}
       onClick={onClick}
-      className="w-11 h-11 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm active:scale-95 transition"
+      className="
+        w-10 h-10 sm:w-11 sm:h-11
+        rounded-full
+        bg-red-600 hover:bg-red-700
+        text-white
+        flex items-center justify-center
+        shadow-sm
+        active:scale-95 transition
+      "
     >
       {children}
     </button>
@@ -28,7 +38,7 @@ export default function StationTopBar({
   selectedDate,
   onDateChange,
   onBellClick,
-  onTimerClick,
+  onShellChange,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -38,26 +48,28 @@ export default function StationTopBar({
 
   return (
     <motion.div
-      initial={{ y: -10, opacity: 0 }}
+      initial={{ y: -8, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.25 }}
       className="bg-white border-b"
     >
-      <div className="h-14 px-4 flex items-center justify-between">
+      <div className="h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Month dropdown + Time */}
-        <div className="flex flex-col leading-tight">
+        <div className="flex flex-col leading-tight min-w-0">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <button
                 className="
-    text-red-600 font-bold text-sm
-    inline-flex items-center gap-1
-    px-2 py-1 rounded-lg
-    hover:bg-red-50 active:bg-red-100
-    transition
-  "
+                  text-red-600 font-bold text-sm sm:text-base
+                  inline-flex items-center gap-1
+                  px-2 py-1 rounded-lg
+                  hover:bg-red-50 active:bg-red-100
+                  transition
+                  max-w-[140px] sm:max-w-none truncate
+                "
               >
-                {monthLabel} <span className="text-red-600">▾</span>
+                <span className="truncate">{monthLabel}</span>
+                <span className="text-red-600 shrink-0">▾</span>
               </button>
             </PopoverTrigger>
 
@@ -66,19 +78,18 @@ export default function StationTopBar({
               side="bottom"
               sideOffset={10}
               className="
-    w-[360px] md:w-[420px]
-    p-0
-    rounded-2xl
-    shadow-2xl
-    border border-white/30
-    bg-white/85
-    backdrop-blur-xl
-    overflow-hidden
-  "
+                w-[min(92vw,360px)] sm:w-[420px]
+                p-0
+                rounded-2xl
+                shadow-2xl
+                border border-white/30
+                bg-white/95
+                backdrop-blur-xl
+                overflow-hidden
+              "
             >
-              {/* Header */}
-              <div className="px-5 py-4 border-b border-black/5">
-                <div className="text-lg font-semibold text-gray-900">
+              <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-black/5">
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
                   Select a date
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
@@ -86,63 +97,65 @@ export default function StationTopBar({
                 </div>
               </div>
 
-              {/* Calendar wrapper with spacing fixes */}
-              <div className="px-4 py-3 calendar-popover">
-                {/* Calendar wrapper with proper card */}
-<div className="px-5 py-4">
-  <div className="mx-auto w-fit rounded-2xl bg-white shadow-sm border border-black/5 p-3">
-    <Calendar
-      mode="single"
-      selected={selected}
-      onSelect={(d) => {
-        if (!d) return;
-        onDateChange(dayjs(d).format("YYYY-MM-DD"));
-        setOpen(false);
-      }}
-      initialFocus
-    />
-  </div>
+              <div className="px-3 sm:px-5 py-3 sm:py-4">
+                <div className="mx-auto w-fit rounded-2xl bg-white shadow-sm border border-black/5 p-2 sm:p-3">
+                  <Calendar
+                    mode="single"
+                    selected={selected}
+                    onSelect={(d) => {
+                      if (!d) return;
+                      onDateChange(dayjs(d).format("YYYY-MM-DD"));
+                      setOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </div>
 
-  <div className="mt-4 flex justify-end">
-    <button
-      onClick={() => {
-        onDateChange(dayjs().format("YYYY-MM-DD"));
-        setOpen(false);
-      }}
-      className="
-        px-6 py-3 rounded-2xl
-        bg-red-600 text-white font-semibold
-        shadow-sm active:scale-95 transition
-      "
-    >
-      Today
-    </button>
-  </div>
-</div>
+                <div className="mt-3 sm:mt-4 flex justify-end">
+                  <button
+                    onClick={() => {
+                      onDateChange(dayjs().format("YYYY-MM-DD"));
+                      setOpen(false);
+                    }}
+                    className="
+                      px-5 sm:px-6 py-2.5 sm:py-3
+                      rounded-2xl
+                      bg-red-600 text-white font-semibold text-sm sm:text-base
+                      shadow-sm active:scale-95 transition
+                    "
+                  >
+                    Today
+                  </button>
+                </div>
               </div>
             </PopoverContent>
           </Popover>
 
-          <div className="text-gray-400 text-xs">{timeLabel}</div>
+          <div className="text-gray-400 text-[11px] sm:text-xs tabular-nums">
+            {timeLabel}
+          </div>
         </div>
 
-        {/* Center: Shell name */}
-        <div className="text-gray-500 font-semibold text-sm md:text-base truncate max-w-[55%] text-center">
-          {shellName}
+        {/* Center: Shell switcher (admin) or shell name (others) */}
+        <div className="hidden sm:flex flex-1 items-center justify-center min-w-0 px-2">
+          <ShellSwitcher tone="muted" onChange={onShellChange} />
         </div>
 
-        {/* Right: action buttons */}
-        <div className="flex gap-2">
+        {/* Right: action buttons + profile */}
+        <div className="flex gap-1.5 sm:gap-2 shrink-0 items-center">
           <IconBtn title="Calendar" onClick={() => setOpen(true)}>
-            📅
+            <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           </IconBtn>
           <IconBtn title="Notifications" onClick={onBellClick}>
-            🔔
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
           </IconBtn>
-          <IconBtn title="Tools" onClick={onTimerClick}>
-            ⏱️
-          </IconBtn>
+          <ProfileMenu />
         </div>
+      </div>
+
+      {/* Compact shell switcher shown on phones below the bar */}
+      <div className="sm:hidden px-3 pb-2 -mt-1">
+        <ShellSwitcher tone="muted" onChange={onShellChange} />
       </div>
     </motion.div>
   );

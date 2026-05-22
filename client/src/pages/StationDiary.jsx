@@ -1,66 +1,93 @@
 import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { api } from "../lib/api";
-import { getSession } from "../lib/storage";
+import { getUser, getShell, setActiveShell } from "../lib/storage";
 
 import StationTopBar from "../components/StationTopBar";
-import DateCarousel from "../components/DateCarousel";
-import DayBanner from "../components/DayBanner";
 import StationTimeline from "../components/StationTimeline";
 import WeatherBanner from "../components/WeatherBanner";
-
-// OPTIONAL: your existing AddIssueDrawer (keep it if you already have it)
-import AddIssueDrawer from "../components/AddIssueDrawer";
 import WeekBar from "../components/WeekBar";
-
+import AddIssueDrawer from "../components/AddIssueDrawer";
 
 export default function StationDiary() {
-  const { shell, staff } = getSession();
+  const user = getUser();
+  const isAdmin = user?.role === "super_admin";
+
+  // Local state tracks the active shell so the ShellSwitcher can update us
+  // without a page reload.
+  const [shell, setShell] = useState(getShell());
+
+  // For super_admin landing here with no shell picked yet, fall back to the
+  // first shell automatically so the page isn't broken.
+  useEffect(() => {
+    if (shell || !isAdmin) return;
+    api
+      .get("/shells")
+      .then((res) => {
+        const first = res.data?.data?.[0];
+        if (!first) return;
+        setActiveShell(first);
+        setShell(first);
+      })
+      .catch(() => {});
+  }, [shell, isAdmin]);
 
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [entries, setEntries] = useState([]);
   const [issueTypes, setIssueTypes] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [direction, setDirection] = useState(1);
 
   const monthLabel = useMemo(() => dayjs(date).format("MMMM YYYY"), [date]);
   const timeLabel = useMemo(() => dayjs().format("HH:mm"), []);
 
-  const [weather, setWeather] = useState(null);
-
-  const [direction, setDirection] = useState(1);
-
   function changeDate(next) {
-  const curr = dayjs(date);
-  const nxt = dayjs(next);
-  setDirection(nxt.isAfter(curr) ? 1 : -1);
-  setDate(next);
-}
+    const curr = dayjs(date);
+    const nxt = dayjs(next);
+    setDirection(nxt.isAfter(curr) ? 1 : -1);
+    setDate(next);
+  }
 
-useEffect(() => {
-  api.get(`/weather?shellId=${shell._id}`)
-    .then(res => setWeather(res.data.data))
-    .catch(() => setWeather(null));
-}, [shell._id, date]);
+  function changeShell(next) {
+    setShell(next);
+  }
 
   useEffect(() => {
-    // issue types for dropdown
-    api.get(`/issue-types?shellId=${shell._id}`).then((res) => setIssueTypes(res.data.data || []));
-  }, [shell._id]);
-
-  // useEffect(() => {
-  //   api.get(`/diary?shellId=${shell._id}&date=${date}`).then((res) => setEntries(res.data.data || []));
-  // }, [shell._id, date]);
+    if (!shell?._id) return;
+    api
+      .get(`/weather?shellId=${shell._id}`)
+      .then((res) => setWeather(res.data.data))
+      .catch(() => setWeather(null));
+  }, [shell?._id, date]);
 
   useEffect(() => {
-  api.get(`/diary?shellId=${shell._id}&date=${date}`).then((res) => {
-    console.log("sample diary item:", res.data.data?.[0]);
-    setEntries(res.data.data || []);
-  });
-}, [shell._id, date]);
+    if (!shell?._id) {
+      setIssueTypes([]);
+      return;
+    }
+    api
+      .get(`/issue-types?shellId=${shell._id}`)
+      .then((res) => setIssueTypes(res.data.data || []))
+      .catch(() => setIssueTypes([]));
+  }, [shell?._id]);
+
+  useEffect(() => {
+    if (!shell?._id) {
+      setEntries([]);
+      return;
+    }
+    api
+      .get(`/diary?shellId=${shell._id}&date=${date}`)
+      .then((res) => setEntries(res.data.data || []))
+      .catch(() => setEntries([]));
+  }, [shell?._id, date]);
 
   async function addEntry(issueTypeId, description) {
+    if (!shell?._id) return;
+    // Super admin doesn't have a per-shell staff record; use their own _id
     await api.post("/diary", {
       shellId: shell._id,
-      staffId: staff._id,
+      staffId: user._id,
       issueTypeId,
       date,
       time: dayjs().format("HH:mm"),
@@ -72,48 +99,53 @@ useEffect(() => {
   }
 
   return (
-  <div className="h-full flex flex-col bg-shellbg">
-    {/* This is the scroll container */}
-    <div className="flex-1 min-h-0 overflow-y-auto">
-      {/* Sticky stack */}
+    <div className="relative bg-shellbg">
       <div className="sticky top-0 z-40 bg-white">
         <StationTopBar
-          shellName={`Shell ${shell.name} Station`}
+          shellName={shell ? `Shell ${shell.name} Station` : "Pick a shell"}
           monthLabel={monthLabel}
           timeLabel={timeLabel}
           selectedDate={date}
           onDateChange={changeDate}
-          onBellClick={() => console.log("notifications")}
-          onTimerClick={() => console.log("tools")}
+          onShellChange={changeShell}
         />
 
         <WeekBar selectedDate={date} onChange={changeDate} direction={direction} />
 
-        {/* Weather banner: keep it sticky too */}
         <div className="border-b">
           <WeatherBanner dayName={dayjs(date).format("dddd")} weather={weather} />
         </div>
       </div>
 
-      {/* Timeline scrolls under the sticky header */}
-      <StationTimeline entries={entries} selectedDate={date} startHour={0} endHour={23} />
+      {shell?._id ? (
+        <StationTimeline
+          entries={entries}
+          selectedDate={date}
+          startHour={0}
+          endHour={23}
+        />
+      ) : (
+        <div className="bg-white p-6 text-center text-sm text-gray-500">
+          Pick a shell from the top to view the diary.
+        </div>
+      )}
 
-      {/* Add button can be fixed in viewport */}
- <div
-  className="
-    pointer-events-none
-    fixed
-    right-6
-    z-50
-    pb-[env(safe-area-inset-bottom)]
-  "
-  style={{ bottom: "96px" }} // 80px tab bar + 16px gap
->
-  <div className="pointer-events-auto">
-    <AddIssueDrawer issueTypes={issueTypes} onSubmit={addEntry} />
-  </div>
-</div>
+      <div
+        className="
+          pointer-events-none
+          fixed right-4 sm:right-6
+          z-40
+        "
+        style={{
+          bottom: "calc(80px + env(safe-area-inset-bottom) + 16px)",
+        }}
+      >
+        <div className="pointer-events-auto">
+          {shell?._id && (
+            <AddIssueDrawer issueTypes={issueTypes} onSubmit={addEntry} />
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
 }

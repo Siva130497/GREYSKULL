@@ -2,11 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-/**
- * Fixed colors for your main categories
- */
 const FIXED_COLORS = {
-  "Issues": "bg-red-600",
+  Issues: "bg-red-600",
   "Site closers": "bg-indigo-600",
   "Call logs": "bg-amber-500",
   "Anything related to site and sales": "bg-emerald-600",
@@ -57,31 +54,25 @@ function safeHourFromTime(timeStr) {
 function resolveIssueName(e) {
   return (
     e?.issueType?.name ||
-    e?.issueTypeId?.name || // if backend populates issueTypeId
-    e?.issueTypeName ||     // if backend sends flat name
+    e?.issueTypeId?.name ||
+    e?.issueTypeName ||
     "Other"
   );
 }
 
 function resolveStaffName(e) {
-  return (
-    e?.staff?.name ||
-    e?.staffId?.name ||     // if backend populates staffId
-    e?.staffName ||
-    ""
-  );
+  return e?.staff?.name || e?.staffId?.name || e?.staffName || "";
 }
 
 export default function StationTimeline({
   entries = [],
-  selectedDate, // YYYY-MM-DD
+  selectedDate,
   startHour = 0,
   endHour = 23,
 }) {
   const scrollerRef = useRef(null);
-  const rowRefs = useRef({}); // hour => element
+  const rowRefs = useRef({});
 
-  // ✅ popup state (MUST be inside component)
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(null);
 
@@ -103,7 +94,6 @@ export default function StationTimeline({
       if (hour != null && map.has(hour)) map.get(hour).push(e);
     }
 
-    // sort each hour by time
     hours.forEach((h) => {
       const list = map.get(h) || [];
       list.sort((a, b) => String(a.time).localeCompare(String(b.time)));
@@ -112,7 +102,6 @@ export default function StationTimeline({
     return map;
   }, [entries, hours]);
 
-  // ✅ auto-center current hour (or 9am for not-today)
   useEffect(() => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
@@ -140,9 +129,8 @@ export default function StationTimeline({
 
   return (
     <>
-      <div className="flex-1 min-h-0 bg-white overflow-hidden">
-        {/* ONLY THIS SCROLLS */}
-        <div ref={scrollerRef} className="h-full overflow-y-auto">
+      <div className="bg-white">
+        <div ref={scrollerRef}>
           <div className="relative">
             {hours.map((h) => {
               const hourEntries = byHour.get(h) || [];
@@ -156,25 +144,24 @@ export default function StationTimeline({
                   }}
                   className="border-b"
                 >
-                  <div className="grid grid-cols-[84px_1fr]">
-                    {/* Left time column */}
-                    <div className="px-3 py-4 text-red-600 font-semibold text-sm bg-white sticky left-0">
+                  <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[72px_1fr] md:grid-cols-[84px_1fr]">
+                    {/* Time column */}
+                    <div className="px-2 sm:px-3 py-3 sm:py-4 text-red-600 font-semibold text-xs sm:text-sm bg-white">
                       <div className="leading-none">{fmtHourLabel(h)}</div>
-                      <div className="text-xs font-normal text-red-600/90 mt-1">
+                      <div className="text-[10px] sm:text-xs font-normal text-red-600/90 mt-1">
                         00
                       </div>
                     </div>
 
-                    {/* Right cell */}
-                    <div className="py-3 pr-4">
-                      {/* current hour highlight line */}
+                    {/* Entries column */}
+                    <div className="py-2 sm:py-3 pr-2 sm:pr-3 md:pr-4">
                       {isNow && (
                         <div className="mb-2 h-[2px] w-full bg-red-500/40 rounded-full" />
                       )}
 
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {hourEntries.length === 0 ? (
-                          <div className="h-12 rounded-xl bg-gray-50 border border-gray-100" />
+                          <div className="h-10 sm:h-12 rounded-xl bg-gray-50 border border-gray-100" />
                         ) : (
                           hourEntries.map((e) => {
                             const issueName = resolveIssueName(e);
@@ -185,24 +172,28 @@ export default function StationTimeline({
                               <button
                                 key={e._id || `${e.time}-${e.description}`}
                                 onClick={() => openEntry(e)}
-                                className={`${color} w-full h-12 rounded-xl shadow-sm flex items-center px-4 text-white text-sm text-left
+                                className={`${color} w-full min-h-[3rem] sm:min-h-[3rem] rounded-xl shadow-sm text-white text-left
                                   active:scale-[0.99] transition
-                                  focus:outline-none`}
+                                  focus:outline-none
+                                  px-3 sm:px-4 py-2 sm:py-2.5`}
                                 title={staffName ? `By ${staffName}` : ""}
                               >
-                                <span className="font-semibold mr-3">{e.time}</span>
-
-                                <span className="px-2 py-1 rounded-lg bg-white/20 text-xs font-bold mr-3">
-                                  {issueName}
-                                </span>
-
-                                <span className="truncate">{e.description || ""}</span>
-
-                                {staffName && (
-                                  <span className="ml-auto text-xs bg-white/15 px-2 py-1 rounded-lg">
-                                    {staffName}
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                  <span className="font-semibold text-xs sm:text-sm tabular-nums shrink-0">
+                                    {e.time}
                                   </span>
-                                )}
+                                  <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-white/20 text-[10px] sm:text-xs font-bold truncate max-w-[40%] sm:max-w-none">
+                                    {issueName}
+                                  </span>
+                                  {staffName && (
+                                    <span className="ml-auto text-[10px] sm:text-xs bg-white/15 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shrink-0 hidden xs:inline-flex">
+                                      {staffName}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs sm:text-sm mt-1 line-clamp-2">
+                                  {e.description || ""}
+                                </div>
                               </button>
                             );
                           })
@@ -213,46 +204,41 @@ export default function StationTimeline({
                 </div>
               );
             })}
-
-            {/* bottom fade */}
-            <div className="pointer-events-none sticky bottom-0 h-10 bg-gradient-to-t from-white to-transparent" />
           </div>
         </div>
       </div>
 
-      {/* ✅ Popup dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[520px] rounded-2xl">
+        <DialogContent
+          aria-describedby={undefined}
+          className="w-[min(96vw,520px)] max-w-[520px] rounded-2xl p-5 sm:p-6"
+        >
           <DialogHeader>
-            <DialogTitle>Station Entry</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Station Entry</DialogTitle>
           </DialogHeader>
 
           {active && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold text-gray-700">Time:</div>
-                <div className="text-sm text-gray-900">{active.time}</div>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-[80px_1fr] gap-2 items-baseline">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700">Time</div>
+                <div className="text-sm text-gray-900 tabular-nums">{active.time}</div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold text-gray-700">Category:</div>
-                <div className="text-sm text-gray-900">
-                  {resolveIssueName(active)}
-                </div>
+              <div className="grid grid-cols-[80px_1fr] gap-2 items-baseline">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700">Category</div>
+                <div className="text-sm text-gray-900">{resolveIssueName(active)}</div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold text-gray-700">Staff:</div>
-                <div className="text-sm text-gray-900">
-                  {resolveStaffName(active) || "—"}
-                </div>
+              <div className="grid grid-cols-[80px_1fr] gap-2 items-baseline">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700">Staff</div>
+                <div className="text-sm text-gray-900">{resolveStaffName(active) || "—"}</div>
               </div>
 
               <div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                   Description
                 </div>
-                <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 text-sm text-gray-900 whitespace-pre-wrap">
+                <div className="rounded-xl bg-gray-50 border border-gray-100 p-3 sm:p-4 text-sm text-gray-900 whitespace-pre-wrap break-words">
                   {active.description || ""}
                 </div>
               </div>

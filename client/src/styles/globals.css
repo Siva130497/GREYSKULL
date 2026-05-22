@@ -1,29 +1,44 @@
 @import "tailwindcss";
 
 @plugin "tailwindcss-animate";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 html, body, #root {
   height: 100%;
+  min-height: 100dvh;
   background: #f4f6f8;
-
-  
-
-  /* --- Calendar (Popover) hard polish for iPad --- */
-.rdp {
-  margin: 0 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.rdp-months {
-  justify-content: center !important;
+body {
+  overscroll-behavior-y: none;
 }
 
-.rdp-month {
-  width: 320px; /* forces a proper calendar width */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Make all native form controls inherit body font on iOS */
+input, textarea, select, button {
+  font-family: inherit;
+}
+
+/* Prevent iOS auto-zoom on focus (font-size >= 16px) */
+input, textarea, select {
+  font-size: 16px;
+}
+
+/* --- Calendar (Popover) hard polish --- */
+.rdp { margin: 0 !important; }
+.rdp-months { justify-content: center !important; }
+.rdp-month { width: 280px; }
+@media (min-width: 640px) {
+  .rdp-month { width: 320px; }
+}
 .rdp-caption {
   display: flex;
   justify-content: center;
@@ -31,102 +46,77 @@ html, body, #root {
   gap: 12px;
   padding: 8px 0 14px;
 }
-
 .rdp-caption_label {
   font-weight: 800;
   font-size: 16px;
-  color: rgba(0,0,0,0.85);
+  color: rgba(0, 0, 0, 0.85);
 }
-
-.rdp-nav {
-  gap: 10px;
-}
-
+.rdp-nav { gap: 10px; }
 .rdp-nav_button {
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
 }
-
 .rdp-head_cell {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(0,0,0,0.55);
+  color: rgba(0, 0, 0, 0.55);
   padding: 6px 0;
 }
-
-.rdp-tbody .rdp-row {
-  gap: 6px;
-}
-
-.rdp-cell {
-  padding: 2px;
-}
-
+.rdp-tbody .rdp-row { gap: 6px; }
+.rdp-cell { padding: 2px; }
 .rdp-day {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 14px;
   font-weight: 700;
 }
-
-.rdp-day:hover {
-  background: rgba(0,0,0,0.06);
+@media (min-width: 640px) {
+  .rdp-day { width: 44px; height: 44px; }
 }
-
+.rdp-day:hover { background: rgba(0, 0, 0, 0.06); }
 .rdp-day_selected,
 .rdp-day_selected:hover {
-  background: #ef4444 !important; /* red */
+  background: #ef4444 !important;
   color: #fff !important;
 }
-
 .rdp-day_today {
   outline: 2px solid rgba(239, 68, 68, 0.35);
   outline-offset: 2px;
   border-radius: 14px;
 }
 
-   @apply bg-background text-foreground;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  }
-
-  
-  /* --- Apple Weather-style ambient animations --- */
+/* --- Apple Weather-style ambient animations --- */
 @keyframes rainDiagonal {
   0% { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(-60px, 60px, 0); }
 }
-
 @keyframes snowDrift {
   0% { transform: translate3d(0, -10px, 0); opacity: 0; }
   15% { opacity: 0.9; }
   100% { transform: translate3d(30px, 90px, 0); opacity: 0.2; }
 }
-
 @keyframes cloudFloatSlow {
   0% { transform: translate3d(-10px, 0, 0); }
   50% { transform: translate3d(10px, -6px, 0); }
   100% { transform: translate3d(-10px, 0, 0); }
 }
-
 @keyframes sunGlowPulse {
   0% { transform: scale(1); opacity: 0.45; }
   50% { transform: scale(1.06); opacity: 0.6; }
   100% { transform: scale(1); opacity: 0.45; }
 }
 
-/* performance hint */
 .weather-anim-layer {
   will-change: transform, opacity;
   transform: translateZ(0);
 }
 
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
 @theme inline {
+  --color-shellbg: #f4f6f8;
+  --color-header: #8ccfd4;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -240,5 +230,7 @@ html, body, #root {
   * {
     @apply border-border outline-ring/50;
   }
-
+  body {
+    @apply bg-background text-foreground;
+  }
 }
